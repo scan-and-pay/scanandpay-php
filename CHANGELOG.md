@@ -5,6 +5,29 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this package adheres to [SemVer](https://semver.org/spec/v2.0.0.html)
 once it reaches `1.0.0`. Pre-1.0 minor versions may include breaking changes.
 
+## [0.2.1] — 2026-05-05
+
+### Fixed
+
+- **`amount` is now `float` dollars, not `int` cents.** The v0.2.0 assumption
+  that the API uses cents was wrong — the Scan & Pay API accepts and returns
+  `amount` as a float dollar value (e.g. `19.90` for $19.90). `SessionResource::create()`,
+  `ScanAndPay::createSession()`, `PaymentSession::$amount`, and
+  `WebhookEvent::$amount` are all now typed `float`.
+- `Render\checkout`: removed erroneous `/ 100` from display formatting —
+  `$session->amount` is already in dollars.
+- Per-session ceiling corrected from 100,000,000 (cents) to 1,000,000.0 (dollars).
+
+### Migration from v0.2.0
+
+```diff
+- $client->createSession(amount: 1990, ...);
++ $client->createSession(amount: 19.90, ...);
+
+- $display = number_format($session->amount / 100, 2);
++ $display = number_format($session->amount, 2);
+```
+
 ## [0.2.0] — 2026-05-04
 
 ### Breaking

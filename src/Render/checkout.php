@@ -23,8 +23,8 @@ function checkout(
     $qrUrl = $session->qrUrl;
     $payUrl = $session->payUrl;
     $sessionId = $session->sessionId;
-    // PaymentSession::$amount is integer cents — divide for display only.
-    $amount = number_format($session->amount / 100, 2);
+    // PaymentSession::$amount is float dollars — format directly.
+    $amount = number_format($session->amount, 2);
     $currency = $session->currency;
     $merchantName = $session->merchantName ?? 'Scan & Pay';
 

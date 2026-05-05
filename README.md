@@ -24,9 +24,9 @@ $client = new ScanAndPay(
     webhookSecret: getenv('SCANANDPAY_WEBHOOK_SECRET'), // optional
 );
 
-// 1. Create a session at checkout. Amount is integer cents.
+// 1. Create a session at checkout. Amount is float dollars.
 $session = $client->createSession(
-    amount: 1990, // $19.90 — floats are a TypeError under strict_types
+    amount: 19.90,  // $19.90
     platformOrderId: 'order_456',
     payId: 'merchant@example.com.au',
     merchantName: 'Acme Coffee',
@@ -51,20 +51,23 @@ try {
 }
 ```
 
-## Money is always integer cents
+## Amount format
 
-The SDK rejects float amounts at the type boundary — strict_types is
-enabled, so `19.90` is a `\TypeError`, not a silent truncation.
+`amount` is always **float dollars** (e.g. `19.90` for $19.90). This matches
+the Scan & Pay API directly — no multiplication or division needed.
 
 ```php
-$client->createSession(amount: 1990, ...);   // ✓
-$client->createSession(amount: 19.90, ...);  // ✗ TypeError
+$client->createSession(amount: 19.90, ...);   // ✓ $19.90
+$client->createSession(amount: 0.50, ...);    // ✓ $0.50
+$client->createSession(amount: 1000.00, ...); // ✓ $1,000.00
+$client->createSession(amount: -1, ...);      // ✗ ValidationException
+$client->createSession(amount: 0, ...);       // ✗ ValidationException
 ```
 
-For display, divide by 100 only at the formatting boundary:
+For display, use `$session->amount` directly:
 
 ```php
-$display = number_format($session->amount / 100, 2);  // "19.90"
+$display = number_format($session->amount, 2);  // "19.90"
 ```
 
 ## Idempotency
@@ -75,7 +78,7 @@ process restarts.
 
 ```php
 $client->createSession(
-    amount: 1990,
+    amount: 19.90,
     platformOrderId: 'order_456',
     payId: 'merchant@example.com.au',
     merchantName: 'Acme Coffee',

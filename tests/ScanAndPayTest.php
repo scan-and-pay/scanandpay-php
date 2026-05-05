@@ -29,7 +29,7 @@ final class ScanAndPayTest extends TestCase
         $client = $this->client();
         $this->expectException(ValidationException::class);
         $client->createSession(
-            amount: -1,
+            amount: -1.0,
             platformOrderId: 'order_1',
             payId: 'm@x.com',
             merchantName: 'X',
@@ -41,7 +41,7 @@ final class ScanAndPayTest extends TestCase
         $client = $this->client();
         $this->expectException(ValidationException::class);
         $client->createSession(
-            amount: 0,
+            amount: 0.0,
             platformOrderId: 'order_1',
             payId: 'm@x.com',
             merchantName: 'X',
@@ -54,25 +54,30 @@ final class ScanAndPayTest extends TestCase
         $this->expectException(ValidationException::class);
         $this->expectExceptionMessageMatches('/per-session limit/');
         $client->createSession(
-            amount: 100_000_001,
+            amount: 1_000_000.01,
             platformOrderId: 'order_1',
             payId: 'm@x.com',
             merchantName: 'X',
         );
     }
 
-    public function testCreateSessionRejectsFloatAmountAtTypeBoundary(): void
+    public function testCreateSessionAcceptsFloatAmount(): void
     {
-        $client = $this->client();
-        $this->expectException(\TypeError::class);
-        // strict_types=1 → passing a float to int $amount is a TypeError.
-        // @phpstan-ignore-next-line — intentional bad input for the test.
-        $client->createSession(
+        $http = new FakeHttpClient();
+        $http->postResponse = $this->canonicalSessionResponse();
+        $client = new ScanAndPay(
+            merchantId: 'merchant_test',
+            apiSecret: 'sp_api_test',
+            http: $http,
+        );
+
+        $session = $client->createSession(
             amount: 19.90,
             platformOrderId: 'order_1',
             payId: 'm@x.com',
             merchantName: 'X',
         );
+        $this->assertInstanceOf(PaymentSession::class, $session);
     }
 
     public function testCreateSessionRejectsNonAudCurrency(): void
@@ -80,7 +85,7 @@ final class ScanAndPayTest extends TestCase
         $client = $this->client();
         $this->expectException(ValidationException::class);
         $client->createSession(
-            amount: 100,
+            amount: 10.00,
             platformOrderId: 'order_1',
             payId: 'm@x.com',
             merchantName: 'X',
@@ -93,7 +98,7 @@ final class ScanAndPayTest extends TestCase
         $client = $this->client();
         $this->expectException(ValidationException::class);
         $client->createSession(
-            amount: 100,
+            amount: 10.00,
             platformOrderId: 'order_1',
             payId: 'm@x.com',
             merchantName: 'X',
@@ -106,7 +111,7 @@ final class ScanAndPayTest extends TestCase
         $client = $this->client();
         $this->expectException(ValidationException::class);
         $client->createSession(
-            amount: 100,
+            amount: 10.00,
             platformOrderId: '',
             payId: 'm@x.com',
             merchantName: 'X',
@@ -124,7 +129,7 @@ final class ScanAndPayTest extends TestCase
         );
 
         $session = $client->createSession(
-            amount: 1990,
+            amount: 99.50,
             platformOrderId: 'order_1',
             payId: 'm@x.com',
             merchantName: 'X',
@@ -145,7 +150,7 @@ final class ScanAndPayTest extends TestCase
         );
 
         $session = $client->createSession(
-            amount: 1990,
+            amount: 99.50,
             platformOrderId: 'order_456',
             payId: 'merchant@example.com.au',
             merchantName: 'Acme Coffee',
@@ -158,7 +163,7 @@ final class ScanAndPayTest extends TestCase
         $this->assertSame([
             'merchantId' => 'merchant_test',
             'platformOrderId' => 'order_456',
-            'amount' => 1990,
+            'amount' => 99.50,
             'currency' => 'AUD',
             'payId' => 'merchant@example.com.au',
             'merchantName' => 'Acme Coffee',
@@ -172,7 +177,7 @@ final class ScanAndPayTest extends TestCase
         $this->assertInstanceOf(PaymentSession::class, $session);
         $this->assertSame('SP_SESS_abc123', $session->sessionId);
         $this->assertSame('WAITING', $session->status);
-        $this->assertSame(1990, $session->amount);
+        $this->assertSame(99.50, $session->amount);
     }
 
     public function testCreateSessionAutoGeneratesIdempotencyKey(): void
@@ -187,7 +192,7 @@ final class ScanAndPayTest extends TestCase
         );
 
         $client->createSession(
-            amount: 1990,
+            amount: 99.50,
             platformOrderId: 'order_456',
             payId: 'merchant@example.com.au',
             merchantName: 'Acme Coffee',
@@ -267,7 +272,7 @@ final class ScanAndPayTest extends TestCase
             'payUrl' => 'https://pay.scanandpay.com.au/p/SP_SESS_abc123',
             'qrUrl' => 'data:image/png;base64,AAAA',
             'payId' => 'merchant@example.com.au',
-            'amount' => 1990,
+            'amount' => 99.50,
             'currency' => 'AUD',
             'reference' => 'Order #456',
             'status' => 'WAITING',

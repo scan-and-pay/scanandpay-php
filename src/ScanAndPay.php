@@ -13,9 +13,9 @@ namespace ScanAndPay;
  *       apiSecret: 'sp_api_live_...'
  *   );
  *
- *   // Create a session — amount is integer cents.
+ *   // Create a session — amount is float dollars.
  *   $session = $client->sessions->create(
- *       amount: 1990, // $19.90
+ *       amount: 19.90, // $19.90
  *       platformOrderId: 'order_456',
  *       payId: 'merchant@payid.com.au',
  *       merchantName: 'Acme Coffee'
@@ -70,7 +70,7 @@ final class ScanAndPay
      * Convenience shorthand to create a payment session.
      */
     public function createSession(
-        int $amount,
+        float $amount,
         string $platformOrderId,
         string $payId,
         string $merchantName,

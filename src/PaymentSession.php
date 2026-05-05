@@ -10,8 +10,8 @@ namespace ScanAndPay;
  * `qrUrl` is a `data:image/png;base64,...` URI — render it directly in an
  * `<img src="..."`> tag, no further encoding needed.
  *
- * `amount` is integer cents. Apply division by 100 only at the display
- * boundary (e.g. when formatting for end-users).
+ * `amount` is a float in dollars (e.g. 19.90 for $19.90). Use it directly
+ * for display — no division required.
  *
  * `status` is one of:
  *   - WAITING — created, customer hasn't paid yet
@@ -29,7 +29,7 @@ final class PaymentSession
         public readonly string $payUrl,
         public readonly string $qrUrl,
         public readonly string $payId,
-        public readonly int $amount,
+        public readonly float $amount,
         public readonly string $currency,
         public readonly string $reference,
         public readonly string $status,
@@ -70,7 +70,7 @@ final class PaymentSession
             payUrl: (string) ($raw['payUrl'] ?? ''),
             qrUrl: (string) ($raw['qrUrl'] ?? ''),
             payId: (string) ($raw['payId'] ?? ''),
-            amount: (int) ($raw['amount'] ?? 0),
+            amount: (float) ($raw['amount'] ?? 0.0),
             currency: (string) ($raw['currency'] ?? 'AUD'),
             reference: (string) ($raw['reference'] ?? ''),
             status: (string) ($raw['status'] ?? ''),

@@ -7,7 +7,8 @@ namespace ScanAndPay;
 /**
  * Typed payload of an inbound webhook event.
  *
- * `amount` is integer cents — keep it that way until display-time formatting.
+ * `amount` is a float in dollars (e.g. 19.90 for $19.90). Use it directly
+ * for display — no division required.
  *
  * `status` mirrors the underlying rail outcome — note that `confirmed`
  * means the payment session is PAID (the API uses 'confirmed' on outbound
@@ -22,7 +23,7 @@ final class WebhookEvent
         public readonly string $orderId,
         public readonly string $paymentSessionId,
         public readonly string $status,
-        public readonly int $amount,
+        public readonly float $amount,
         public readonly string $currency,
         public readonly string $txId,
         public readonly int $timestamp,
@@ -60,7 +61,7 @@ final class WebhookEvent
             orderId: (string) $raw['order_id'],
             paymentSessionId: (string) $raw['payment_session_id'],
             status: (string) $raw['status'],
-            amount: (int) $raw['amount'],
+            amount: (float) $raw['amount'],
             currency: (string) $raw['currency'],
             txId: (string) $raw['tx_id'],
             timestamp: (int) $raw['timestamp'],

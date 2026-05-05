@@ -14,8 +14,8 @@ final class SessionResource
     /** @var string[] */
     private const VALID_SOURCES = ['api', 'woocommerce', 'shopify', 'pos', 'magento', 'wordpress', 'shop-app'];
 
-    /** Per-session amount ceiling — $1,000,000 in cents. */
-    private const MAX_AMOUNT_CENTS = 100_000_000;
+    /** Per-session amount ceiling — $1,000,000. */
+    private const MAX_AMOUNT = 1_000_000.0;
 
     public function __construct(
         private readonly string $merchantId,
@@ -26,15 +26,15 @@ final class SessionResource
     /**
      * Creates a new payment session.
      *
-     * `$amount` is integer cents. Floats are a TypeError under strict_types;
-     * zero / negative / above-ceiling values throw ValidationException
+     * `$amount` is a positive float in dollars (e.g. 19.90 for $19.90).
+     * Zero, negative, and above-ceiling values throw ValidationException
      * before any network call.
      *
      * `$idempotencyKey` defaults to a UUIDv7 — replaying the same key inside
      * the server's 24h dedup window returns the existing session unchanged.
      */
     public function create(
-        int $amount,
+        float $amount,
         string $platformOrderId,
         string $payId,
         string $merchantName,
@@ -44,9 +44,9 @@ final class SessionResource
         ?string $idempotencyKey = null,
     ): PaymentSession {
         if ($amount <= 0) {
-            throw new ValidationException('amount must be greater than 0 (integer cents)');
+            throw new ValidationException('amount must be greater than 0 (float dollars, e.g. 19.90)');
         }
-        if ($amount > self::MAX_AMOUNT_CENTS) {
+        if ($amount > self::MAX_AMOUNT) {
             throw new ValidationException('amount exceeds the per-session limit ($1,000,000.00)');
         }
         if ($currency !== 'AUD') {
