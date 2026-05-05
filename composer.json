@@ -1,0 +1,46 @@
+{
+    "name": "scanandpay/php",
+    "description": "Official Scan & Pay PHP SDK — accept PayTo PayID payments via QR.",
+    "type": "library",
+    "license": "Apache-2.0",
+    "homepage": "https://docs.scanandpay.com.au",
+    "support": {
+        "docs": "https://docs.scanandpay.com.au/sdks/php",
+        "email": "hi@scanandpay.com.au",
+        "issues": "https://github.com/scan-and-pay/scanandpay-php/issues",
+        "source": "https://github.com/scan-and-pay/scanandpay-php"
+    },
+    "keywords": ["payments", "payid", "payto", "scanandpay", "qr", "australia"],
+    "require": {
+        "php": "^8.1",
+        "ext-curl": "*",
+        "ext-json": "*",
+        "ext-hash": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0",
+        "friendsofphp/php-cs-fixer": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "ScanAndPay\\": "src/"
+        },
+        "files": [
+            "src/Render/checkout.php",
+            "src/functions.php"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ScanAndPay\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit",
+        "lint": "php-cs-fixer fix --dry-run --diff",
+        "format": "php-cs-fixer fix"
+    },
+    "config": {
+        "sort-packages": true
+    }
+}
