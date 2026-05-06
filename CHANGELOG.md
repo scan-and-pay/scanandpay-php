@@ -5,6 +5,14 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this package adheres to [SemVer](https://semver.org/spec/v2.0.0.html)
 once it reaches `1.0.0`. Pre-1.0 minor versions may include breaking changes.
 
+## [0.2.2] — 2026-05-06
+
+### Documentation
+
+- README: new **Integration pitfalls** section covering common mistakes
+  third-party integrators hit (amount type, idempotency, webhook
+  verification timing, terminal-state handling).
+
 ## [0.2.1] — 2026-05-05
 
 ### Fixed

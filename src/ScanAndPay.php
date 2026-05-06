@@ -45,6 +45,9 @@ final class ScanAndPay
         if ($merchantId === '') {
             throw new \InvalidArgumentException('merchantId must not be empty');
         }
+        if ($apiSecret === '') {
+            throw new \InvalidArgumentException('apiSecret must not be empty');
+        }
 
         $this->http = $http ?? new HttpClient($apiSecret, $baseUrl);
         $this->sessions = new Resources\SessionResource($this->merchantId, $this->http);

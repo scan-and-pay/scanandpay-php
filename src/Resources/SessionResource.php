@@ -70,7 +70,7 @@ final class SessionResource
         $body = [
             'merchantId' => $this->merchantId,
             'platformOrderId' => $platformOrderId,
-            'amount' => $amount,
+            'amount' => round($amount, 2),
             'currency' => $currency,
             'payId' => $payId,
             'merchantName' => $merchantName,

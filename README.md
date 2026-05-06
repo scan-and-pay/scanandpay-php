@@ -158,6 +158,29 @@ Sign in to the merchant dashboard at
 
 Store them in environment variables — never commit them to source control.
 
+## Integration pitfalls
+
+Things that bite first-time integrators (we've hit each one ourselves):
+
+1. **Create the order BEFORE minting the session.** The session binds
+   to your `platformOrderId` and the webhook references the same id
+   when the payment is confirmed. Persist the order in your DB
+   (status `pending`) first, then call `$client->createSession([...])`.
+2. **Don't finalise the order on Place Order.** A common pattern in
+   checkout code (WooCommerce included) is a hardcoded list — "if
+   this gateway is stripe / paypal / etc. defer; otherwise finalise
+   immediately". If that list is missing `scanandpay`, the checkout
+   flashes a success screen and the QR widget never renders. Always
+   treat Scan & Pay as a deferred / async-confirmation gateway, just
+   like Stripe Checkout or PayPal — the customer needs to see the QR
+   and complete the scan-and-pay in their banking app before the
+   order can be considered paid.
+3. **Webhook is the source of truth.** Mark the order paid only when
+   the verified webhook arrives with `$event->isPaid()` (or
+   `event.status === 'confirmed'` if you're inspecting the raw
+   payload). The Place Order click on your site does NOT mean money
+   has moved.
+
 ## Documentation
 
 - **API reference:** https://docs.scanandpay.com.au/api/payments

@@ -21,6 +21,7 @@ final class ScanAndPayTest extends TestCase
     public function testEmptyApiSecretRejected(): void
     {
         $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessageMatches('/apiSecret/');
         new ScanAndPay(merchantId: 'merchant_test', apiSecret: '');
     }
 
