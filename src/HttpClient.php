@@ -34,8 +34,8 @@ use ScanAndPay\Exceptions\ServerException;
  */
 class HttpClient
 {
-    public const VERSION = '0.3.1';
-    public const API_VERSION = '2026-05-07';
+    public const VERSION = '0.4.0';
+    public const API_VERSION = '2026-05-11';
     public const DEFAULT_RETRIES = 3;
     public const DEFAULT_BASE_MS = 250;
 

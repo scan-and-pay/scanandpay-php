@@ -17,7 +17,8 @@ namespace ScanAndPay;
 final class WebhookEvent
 {
     /**
-     * @param array<string, mixed> $raw  Original decoded JSON, kept for downstream debugging.
+     * @param array<string, string>|null $metadata Echoed back from createSession (free-form k/v bag).
+     * @param array<string, mixed>       $raw      Original decoded JSON, kept for downstream debugging.
      */
     public function __construct(
         public readonly string $orderId,
@@ -28,6 +29,7 @@ final class WebhookEvent
         public readonly string $txId,
         public readonly int $timestamp,
         public readonly string $nonce,
+        public readonly ?array $metadata,
         public readonly array $raw,
     ) {
     }
@@ -57,6 +59,16 @@ final class WebhookEvent
             }
         }
 
+        $metadata = null;
+        if (isset($raw['metadata']) && is_array($raw['metadata'])) {
+            $metadata = [];
+            foreach ($raw['metadata'] as $k => $v) {
+                if (is_string($k) && is_string($v)) {
+                    $metadata[$k] = $v;
+                }
+            }
+        }
+
         return new self(
             orderId: (string) $raw['order_id'],
             paymentSessionId: (string) $raw['payment_session_id'],
@@ -66,6 +78,7 @@ final class WebhookEvent
             txId: (string) $raw['tx_id'],
             timestamp: (int) $raw['timestamp'],
             nonce: (string) $raw['nonce'],
+            metadata: $metadata,
             raw: $raw,
         );
     }

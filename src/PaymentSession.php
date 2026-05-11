@@ -22,13 +22,16 @@ namespace ScanAndPay;
 final class PaymentSession
 {
     /**
-     * @param array<string, mixed> $raw  Original decoded JSON, kept for downstream debugging.
+     * @param array<string, string>|null $metadata Echoed back from createSession (free-form k/v bag).
+     * @param array<string, mixed>       $raw      Original decoded JSON, kept for downstream debugging.
      */
     public function __construct(
         public readonly string $sessionId,
         public readonly string $payUrl,
         public readonly string $qrUrl,
         public readonly string $payId,
+        public readonly int $amountCents,
+        /** @deprecated Use amountCents. Float dollars kept for backwards compat. */
         public readonly float $amount,
         public readonly string $currency,
         public readonly string $reference,
@@ -38,6 +41,7 @@ final class PaymentSession
         public readonly ?string $merchantName,
         public readonly ?string $createdAt,
         public readonly ?string $paidAt,
+        public readonly ?array $metadata,
         public readonly array $raw,
     ) {
     }
@@ -65,12 +69,28 @@ final class PaymentSession
     /** @param array<string, mixed> $raw */
     public static function fromArray(array $raw): self
     {
+        $metadata = null;
+        if (isset($raw['metadata']) && is_array($raw['metadata'])) {
+            $metadata = [];
+            foreach ($raw['metadata'] as $k => $v) {
+                if (is_string($k) && is_string($v)) {
+                    $metadata[$k] = $v;
+                }
+            }
+        }
+
+        $amountCents = isset($raw['amountCents']) ? (int) $raw['amountCents']
+            : (isset($raw['amount']) ? (int) round((float) $raw['amount'] * 100) : 0);
+        $amount = isset($raw['amount']) ? (float) $raw['amount']
+            : ($amountCents > 0 ? $amountCents / 100 : 0.0);
+
         return new self(
             sessionId: (string) ($raw['sessionId'] ?? ''),
             payUrl: (string) ($raw['payUrl'] ?? ''),
             qrUrl: (string) ($raw['qrUrl'] ?? ''),
             payId: (string) ($raw['payId'] ?? ''),
-            amount: (float) ($raw['amount'] ?? 0.0),
+            amountCents: $amountCents,
+            amount: $amount,
             currency: (string) ($raw['currency'] ?? 'AUD'),
             reference: (string) ($raw['reference'] ?? ''),
             status: (string) ($raw['status'] ?? ''),
@@ -79,6 +99,7 @@ final class PaymentSession
             merchantName: isset($raw['merchantName']) ? (string) $raw['merchantName'] : null,
             createdAt: isset($raw['createdAt']) ? (string) $raw['createdAt'] : null,
             paidAt: isset($raw['paidAt']) ? (string) $raw['paidAt'] : null,
+            metadata: $metadata,
             raw: $raw,
         );
     }

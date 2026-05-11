@@ -229,6 +229,99 @@ final class ScanAndPayTest extends TestCase
         $this->assertSame(['sessionId' => 'SP_SESS_abc123'], $http->lastQuery);
     }
 
+    public function testCreateSessionForwardsMetadata(): void
+    {
+        $http = new FakeHttpClient();
+        $http->postResponse = $this->canonicalSessionResponse();
+        $client = new ScanAndPay(
+            merchantId: 'merchant_test',
+            apiSecret: 'sp_api_test',
+            http: $http,
+        );
+
+        $client->createSession(
+            amount: 19.90,
+            platformOrderId: 'order_456',
+            payId: 'm@x.com',
+            merchantName: 'X',
+            metadata: ['customer_id' => 'cus_42', 'cart' => 'cart_99'],
+        );
+
+        $this->assertSame(
+            ['customer_id' => 'cus_42', 'cart' => 'cart_99'],
+            $http->lastBody['metadata'] ?? null
+        );
+    }
+
+    public function testCreateSessionOmitsMetadataKeyWhenNotProvided(): void
+    {
+        $http = new FakeHttpClient();
+        $http->postResponse = $this->canonicalSessionResponse();
+        $client = new ScanAndPay(
+            merchantId: 'merchant_test',
+            apiSecret: 'sp_api_test',
+            http: $http,
+        );
+
+        $client->createSession(
+            amount: 19.90,
+            platformOrderId: 'order_456',
+            payId: 'm@x.com',
+            merchantName: 'X',
+        );
+
+        $this->assertArrayNotHasKey('metadata', $http->lastBody ?? []);
+    }
+
+    public function testCreateSessionRejectsMetadataAboveKeyLimit(): void
+    {
+        $client = $this->client();
+        $big = [];
+        for ($i = 0; $i < 51; $i++) {
+            $big["k{$i}"] = 'v';
+        }
+
+        $this->expectException(\ScanAndPay\Exceptions\ValidationException::class);
+        $this->expectExceptionMessageMatches('/50 keys/');
+        $client->createSession(
+            amount: 19.90,
+            platformOrderId: 'o',
+            payId: 'm@x.com',
+            merchantName: 'X',
+            metadata: $big,
+        );
+    }
+
+    public function testCreateSessionRejectsMetadataValueTooLong(): void
+    {
+        $client = $this->client();
+
+        $this->expectException(\ScanAndPay\Exceptions\ValidationException::class);
+        $this->expectExceptionMessageMatches('/500 chars/');
+        $client->createSession(
+            amount: 19.90,
+            platformOrderId: 'o',
+            payId: 'm@x.com',
+            merchantName: 'X',
+            metadata: ['note' => str_repeat('x', 501)],
+        );
+    }
+
+    public function testCreateSessionRejectsNonStringMetadataValue(): void
+    {
+        $client = $this->client();
+
+        $this->expectException(\ScanAndPay\Exceptions\ValidationException::class);
+        $this->expectExceptionMessageMatches('/must be a string/');
+        $client->createSession(
+            amount: 19.90,
+            platformOrderId: 'o',
+            payId: 'm@x.com',
+            merchantName: 'X',
+            metadata: ['count' => 42],
+        );
+    }
+
     public function testPingReturnsTrueOnSuccess(): void
     {
         $http = new FakeHttpClient();

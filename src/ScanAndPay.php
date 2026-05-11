@@ -31,6 +31,7 @@ final class ScanAndPay
     public const DEFAULT_BASE_URL = 'https://api.scanandpay.com.au';
 
     public readonly Resources\SessionResource $sessions;
+    public readonly Resources\RefundResource $refunds;
     private readonly ?Resources\WebhooksResource $webhooks;
     private readonly HttpClient $http;
 
@@ -51,6 +52,7 @@ final class ScanAndPay
 
         $this->http = $http ?? new HttpClient($apiSecret, $baseUrl);
         $this->sessions = new Resources\SessionResource($this->merchantId, $this->http);
+        $this->refunds = new Resources\RefundResource($this->merchantId, $this->http);
         $this->webhooks = $webhookSecret !== null
             ? new Resources\WebhooksResource($webhookSecret, $previousWebhookSecret)
             : null;
@@ -70,10 +72,12 @@ final class ScanAndPay
     }
 
     /**
-     * Convenience shorthand to create a payment session.
+     * @param array<string, string>|null $metadata Free-form k/v bag echoed in
+     *                                             the webhook (50 keys × 500
+     *                                             chars max).
      */
     public function createSession(
-        float $amount,
+        int $amountCents,
         string $platformOrderId,
         string $payId,
         string $merchantName,
@@ -81,9 +85,10 @@ final class ScanAndPay
         string $source = 'api',
         string $currency = 'AUD',
         ?string $idempotencyKey = null,
+        ?array $metadata = null,
     ): PaymentSession {
         return $this->sessions->create(
-            amount: $amount,
+            amountCents: $amountCents,
             platformOrderId: $platformOrderId,
             payId: $payId,
             merchantName: $merchantName,
@@ -91,15 +96,27 @@ final class ScanAndPay
             source: $source,
             currency: $currency,
             idempotencyKey: $idempotencyKey,
+            metadata: $metadata,
         );
     }
 
-    /**
-     * Convenience shorthand to retrieve a payment session status.
-     */
     public function getStatus(string $sessionId): PaymentSession
     {
         return $this->sessions->retrieve($sessionId);
+    }
+
+    public function createRefund(
+        string $paymentSessionId,
+        int $amountCents,
+        ?string $reason = null,
+        ?string $idempotencyKey = null,
+    ): Refund {
+        return $this->refunds->create(
+            paymentSessionId: $paymentSessionId,
+            amountCents: $amountCents,
+            reason: $reason,
+            idempotencyKey: $idempotencyKey,
+        );
     }
 
     /**
