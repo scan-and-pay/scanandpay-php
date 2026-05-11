@@ -1,8 +1,24 @@
 # scanandpay/php
 
-Official PHP SDK for [Scan & Pay](https://docs.scanandpay.com.au) — accept
-PayTo PayID payments via QR code from any PHP backend (Laravel, Symfony,
-Magento, plain PHP, …). No WordPress or framework required.
+Official PHP SDK for [Scan & Pay](https://docs.scanandpay.com.au) —
+generate PayTo PayID QR codes and payment links from any PHP backend
+(Laravel, Symfony, Magento, plain PHP, …), then react to our signed
+webhook when a payment is confirmed. No WordPress or framework required.
+
+Your backend mints a session, we run the payment surface, our webhook
+confirms back to you.
+
+## How the pieces fit
+
+```
+Your backend     ──  createSession()   ─▶  Scan & Pay API     (mint QR + pay URL)
+Customer phone   ──  scans QR          ─▶  pay.scanandpay.com.au   (we collect payment)
+Scan & Pay       ──  signed webhook    ─▶  Your backend       (payment confirmation)
+```
+
+You never handle funds, banking credentials, or PayID resolution — the SDK
+generates the link, the customer pays on our hosted surface, and you receive
+a verified webhook telling you the order is paid.
 
 ## Install
 
@@ -68,6 +84,44 @@ For display, use `$session->amount` directly:
 
 ```php
 $display = number_format($session->amount, 2);  // "19.90"
+```
+
+## Metadata
+
+Attach a free-form key/value bag to any session. We echo it back unchanged
+in the webhook payload + `getStatus` response, so you can correlate the
+payment with your own order/customer/cart records.
+
+```php
+$session = $client->createSession(
+    amount: 19.90,
+    platformOrderId: 'order_456',
+    payId: 'merchant@example.com.au',
+    merchantName: 'Acme Coffee',
+    metadata: [
+        'customer_id' => 'cus_42',
+        'cart_id'     => 'cart_99',
+    ],
+);
+
+// Later in your webhook handler:
+$event->metadata['customer_id']; // 'cus_42'
+```
+
+Limits: max **50 keys**, max **500 chars** per key + value (validated
+client-side before any network call). Don't put secrets here — metadata
+isn't encrypted at rest in any special way.
+
+## API versioning
+
+The SDK pins itself to a date-stamped API contract via the `Scanpay-Version`
+header (e.g. `2026-05-07`). When we evolve the wire format, your
+already-installed SDK keeps running against the contract it was built for.
+Upgrade at your own pace.
+
+```php
+HttpClient::API_VERSION;  // '2026-05-07'
+HttpClient::VERSION;      // '0.3.0'
 ```
 
 ## Idempotency
@@ -149,7 +203,7 @@ HTTP-status-mapped subclasses extend `ApiException`:
 ## Credentials
 
 Sign in to the merchant dashboard at
-[merchant.scanandpay.com.au](https://merchant.scanandpay.com.au), open
+[business.scanandpay.com.au](https://business.scanandpay.com.au), open
 **Settings → Integrations**, and copy:
 
 - `Merchant ID`
@@ -157,6 +211,44 @@ Sign in to the merchant dashboard at
 - `Webhook Secret`
 
 Store them in environment variables — never commit them to source control.
+
+## Production integration checklist
+
+Use the SDK from your backend only. Your frontend can display the returned
+payment URL or QR widget, but it must never receive the API Secret or Webhook
+Secret.
+
+1. **Create your local order first.** Store the cart, customer, amount,
+   currency, and a durable `platformOrderId` in your own database with a
+   pending payment status.
+2. **Create one Scan & Pay session for that order.** Call
+   `$client->createSession()` from your backend using the same
+   `platformOrderId`. Pass an idempotency key based on your order id if the
+   request may be retried by a queue worker, PHP-FPM retry, or browser refresh.
+3. **Render the payment step as pending.** Show the returned payment session
+   to the customer with `scanandpay_checkout()`, your own QR renderer, or a
+   redirect to the returned pay URL. Do not send the customer to a success
+   page yet.
+4. **Expose a small status endpoint.** If you use `scanandpay_checkout()`,
+   point `pollUrl` at your own backend endpoint. That endpoint should fetch
+   status with the SDK and return only the public status fields your UI needs.
+5. **Verify the webhook on raw request bytes.** Use
+   `$client->webhooks()->verify($signature, $rawBody)` before trusting any
+   webhook payload. A parsed or re-serialized body will fail signature
+   verification.
+6. **React to our payment confirmation webhook.** Treat `$event->isPaid()`
+   as the signal to mark your order paid in your own database. The Place
+   Order click and QR render only mean payment has started — money has not
+   moved until the webhook arrives.
+7. **Keep test and live credentials separate.** Use environment variables or
+   your secret manager, and never commit merchant credentials into source
+   control, frontend bundles, mobile apps, logs, screenshots, or support
+   tickets.
+
+Safe to share publicly: package install commands, SDK method names,
+request/response fields, webhook verification rules, idempotency guidance,
+test-mode behaviour, and error handling. Keep your database schema, internal
+routes, cloud project names, merchant secrets, and admin tooling private.
 
 ## Integration pitfalls
 

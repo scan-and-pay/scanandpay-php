@@ -34,7 +34,8 @@ use ScanAndPay\Exceptions\ServerException;
  */
 class HttpClient
 {
-    public const VERSION = '0.2.0';
+    public const VERSION = '0.3.1';
+    public const API_VERSION = '2026-05-07';
     public const DEFAULT_RETRIES = 3;
     public const DEFAULT_BASE_MS = 250;
 
@@ -109,6 +110,8 @@ class HttpClient
                 'X-Scanpay-Key' => $this->apiSecret,
                 'Accept' => 'application/json',
                 'User-Agent' => 'scanandpay-php/' . self::VERSION,
+                'X-Scanpay-Sdk' => 'scanandpay-php/' . self::VERSION,
+                'Scanpay-Version' => self::API_VERSION,
             ],
             $extraHeaders
         );
