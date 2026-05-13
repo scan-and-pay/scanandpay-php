@@ -38,6 +38,7 @@ $client = new ScanAndPay(
     merchantId: getenv('SCANANDPAY_MERCHANT_ID'),
     apiSecret: getenv('SCANANDPAY_API_SECRET'),
     webhookSecret: getenv('SCANANDPAY_WEBHOOK_SECRET'), // optional
+    baseUrl: getenv('SCANANDPAY_API_BASE_URL') ?: 'https://api.scanandpay.com.au',
 );
 
 // 1. Create a session at checkout. Amount is float dollars.
@@ -207,6 +208,7 @@ Sign in to the merchant dashboard at
 **Settings → Integrations**, and copy:
 
 - `Merchant ID`
+- `API Base URL`
 - `API Secret`
 - `Webhook Secret`
 
