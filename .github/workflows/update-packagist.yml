@@ -1,0 +1,25 @@
+name: Update Packagist
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update-packagist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify Packagist
+        env:
+          PACKAGIST_USERNAME: scanandpay
+          PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
+        run: |
+          curl -fsS -X POST \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer ${PACKAGIST_USERNAME}:${PACKAGIST_TOKEN}" \
+            -d '{"repository":"https://github.com/scan-and-pay/scanandpay-php"}' \
+            https://packagist.org/api/update-package
